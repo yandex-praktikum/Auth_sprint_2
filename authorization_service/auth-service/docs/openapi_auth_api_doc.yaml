@@ -1,0 +1,662 @@
+openapi: 3.0.0
+info:
+  title: Auth API
+  version: 1.0.0
+paths:
+  /register:
+    post:
+      tags:
+        - Registration
+      summary: User registration endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+               $ref: '#/components/schemas/user-registered-resp'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+               $ref: '#/components/schemas/validation-error-resp'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+               $ref: '#/components/schemas/bad-request-reg-resp'
+        '500':
+          description: Internal server error
+
+  /login:
+      post:
+        tags:
+          - Authentication
+        summary: User authentication endpoint
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                  password:
+                    type: string
+        responses:
+          '200':
+            description: Successfully authenticated
+            headers:
+              Set-Cookie:
+                schema:
+                  type: string
+                  example:
+                    access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXN1bHQiOiJZb3UgYXJlIGF3ZXNvbWUhIn0.PhRXjIVL1yUhAND4uiE-p6V2rXHQ0drCj9156thJAJg; HttpOnly;refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXN1bHQiOiJZb3UgYXJlIHZlcnkgc21hcnQhIn0.GZvDoQdT9ldwmlPOrZWrpiaHas0DiFmZlytr1dhaxi4; HttpOnly
+          '422':
+            description: Validation error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/validation-error-resp'
+          '400':
+            description: Bad request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/bad-request-login-resp'
+
+  /logout:
+      post:
+        tags:
+          - Authentication
+        summary: User logout endpoint
+        security:
+          - Cookie: [access_token=]
+
+        responses:
+          '204':
+            description:
+          '401':
+            description: Unauthorised
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/unauthorised-resp'
+
+  /token-refresh:
+        post:
+          tags:
+            - Authentication
+          summary: Refresh access_token
+          security:
+            - Cookie: [refresh_token=]
+
+          responses:
+            '200':
+              description: Ok
+              headers:
+                Set-Cookie:
+                  schema:
+                    type: string
+                    example:
+                      access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXN1bHQiOiJZb3UgYXJlIGF3ZXNvbWUhIn0.PhRXjIVL1yUhAND4uiE-p6V2rXHQ0drCj9156thJAJg; HttpOnly;refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXN1bHQiOiJZb3UgYXJlIHZlcnkgc21hcnQhIn0.GZvDoQdT9ldwmlPOrZWrpiaHas0DiFmZlytr1dhaxi4; HttpOnly
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+            '400':
+              description: Bad request
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/bad-request-resp'
+            '500':
+              description: Internal server error
+  /account/{user_id}:
+      get:
+        tags:
+          - Personal account
+        summary: User account endpoint
+        parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        security:
+          - Cookie: [access_token=]
+
+        responses:
+          '200':
+            description: Ok
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/user-account-info-resp'
+          '401':
+            description: Unauthorised
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/unauthorised-resp'
+
+  /account/{user_id}/history:
+        get:
+          tags:
+            - Personal account
+          summary: History of user logins
+          parameters:
+          - name: user_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/user-login-history-resp'
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+
+  /account/{user_id}/reset-credentials:
+        put:
+          tags:
+            - Personal account
+          summary: Reset username or password
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                      example: 'new_email@mail.com'
+                    password:
+                      type: string
+                      example: 'new_password'
+          parameters:
+          - name: user_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+              headers:
+                Set-Cookie:
+                  schema:
+                    type: string
+                    example:
+                      access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXN1bHQiOiJZb3UgYXJlIGF3ZXNvbWUhIn0.PhRXjIVL1yUhAND4uiE-p6V2rXHQ0drCj9156thJAJg; HttpOnly;refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXN1bHQiOiJZb3UgYXJlIHZlcnkgc21hcnQhIn0.GZvDoQdT9ldwmlPOrZWrpiaHas0DiFmZlytr1dhaxi4; HttpOnly
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/user-registered-resp'
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+            '400':
+              description: Bad request
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/reset-credentials-bad-req-resp'
+
+  /admin/users/{user_id}/roles:
+        get:
+          tags:
+            - Admin user permissions
+          summary: Get user permissions (roles)
+          parameters:
+          - name: user_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/user-permissions-resp'
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+
+  /admin/users/{user_id}/roles/{role_id}:
+        put:
+          tags:
+            - Admin user permissions
+          summary: Assigne role on a user
+          parameters:
+          - name: user_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          - name: role_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/user-add-role-resp'
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+        delete:
+          tags:
+            - Admin user permissions
+          summary: Remove role from a user
+          parameters:
+          - name: user_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          - name: role_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/user-add-role-resp'
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+
+  /admin/roles:
+        get:
+          tags:
+            - Admin roles
+          summary: Get list of roles
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/roles-list-resp'
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+        post:
+          tags:
+            - Admin roles
+          summary: Create a role
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '201':
+              description: Ok
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/role-create-resp'
+            '409':
+              description: Role exists
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+
+  /admin/roles/{role_id}:
+        get:
+          tags:
+            - Admin roles
+          summary: Get role permissions
+          parameters:
+          - name: role_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/role-info-resp'
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+            '404':
+              description: Role not found
+        put:
+          tags:
+            - Admin roles
+          summary: Update role permissions
+          parameters:
+          - name: role_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "subscriber"
+                    permissions:
+                      type: array
+                      example:
+                        - "paid content viewer"
+
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/role-info-resp'
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+            '404':
+              description: Role not found
+            '409':
+              description: Role name aleady exists
+
+        delete:
+          tags:
+            - Admin roles
+          summary: Delete role
+          parameters:
+          - name: role_id
+            in: path
+            required: true
+            schema:
+              type: string
+              format: uuid
+          security:
+            - Cookie: [access_token=]
+
+          responses:
+            '200':
+              description: Ok
+            '404':
+              description: Role not found
+            '401':
+              description: Unauthorised
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/unauthorised-resp'
+
+
+
+
+
+
+
+components:
+  schemas:
+    user-registered-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'success'
+        data:
+          type: string
+          example: "{}"
+        user_id:
+          type: string
+          example: 'b92ef010-5e4c-4fd0-99d6-41b6456272cd'
+        email:
+          type: string
+          example: 'user@email.com'
+        is_active:
+          type: boolean
+          example: true
+    validation-error-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'validation error'
+    bad-request-reg-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'bad request'
+        error:
+          type: string
+          example: 'user exists | password validation failed'
+    bad-request-login-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'bad request'
+        error:
+          type: string
+          example: 'wrong credentials | inactive user | user not verified'
+    bad-request-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'bad request'
+    reset-credentials-bad-req-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'bad request'
+        message:
+          type: string
+          example: 'password/email validation failed | user with received email already exists'
+    user-login-cookie:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXN1bHQiOiJZb3UgYXJlIGF3ZXNvbWUhIn0.PhRXjIVL1yUhAND4uiE-p6V2rXHQ0drCj9156thJAJg'
+        refresh_token:
+          type: string
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZXN1bHQiOiJZb3UgYXJlIHZlcnkgc21hcnQhIn0.GZvDoQdT9ldwmlPOrZWrpiaHas0DiFmZlytr1dhaxi4'
+    unauthorised-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'unauthorised'
+    user-account-info-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'success'
+        data:
+          type: string
+          example: "{}"
+        id:
+          type: string
+          example: 'b92ef010-5e4c-4fd0-99d6-41b6456272cd'
+        email:
+          type: string
+          example: 'user@email.com'
+    user-login-history-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'success'
+        data:
+          type: array
+          example: [{"timestamp": "", "ip_address": "","location": "", "user_agent": ""}]
+    user-permissions-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'success'
+        data:
+          type: string
+          example: "{}"
+        user_id:
+          type: string
+          example: 'b92ef010-5e4c-4fd0-99d6-41b6456272cd'
+        roles:
+          type: string
+          example: "{uuid1: {role_name: subscriber, permissions: [ a, b, c]}}"
+    user-add-role-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'success'
+        user_id:
+          type: string
+          example: 'b92ef010-5e4c-4fd0-99d6-41b6456272cd'
+        roles:
+          type: array
+          example: [{"id": "uuid1", "name": "subscriber"}, {"id": "uuid2", "name": "manager"}]
+    roles-list-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'success'
+        data:
+          type: array
+          example: [{"id": "uuid1", "name": "subscriber"}, {"id": "uuid2", "name": "manager"}]
+    role-info-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'success'
+        id:
+          type: string
+          example: 'uuid'
+        name:
+          type: string
+          example: 'subscriber'
+        permissions:
+          type: array
+          example: ["paid content viewer"]
+    role-create-resp:
+      type: object
+      properties:
+        result:
+          type: string
+          example: 'success'
+        id:
+          type: string
+          example: 'uuid'
+        name:
+          type: string
+          example: 'subscriber'
