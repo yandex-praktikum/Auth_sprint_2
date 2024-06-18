@@ -23,6 +23,10 @@ class JWTBearer(HTTPBearer):
         super().__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request) -> dict:
+        # try:
+        #     credentials: HTTPAuthorizationCredentials = await super().__call__(request)
+        # except Exception:  # TODO find the right exception and leave only this
+        #     return None
         credentials: HTTPAuthorizationCredentials = await super().__call__(request)
         if not credentials:
             raise HTTPException(status_code=http.HTTPStatus.FORBIDDEN, detail='Invalid authorization code.')
@@ -36,9 +40,6 @@ class JWTBearer(HTTPBearer):
     @staticmethod
     def parse_token(jwt_token: str) -> Optional[dict]:
         return decode_token(jwt_token)
-
-
-#security_jwt = JWTBearer()
 
 
 @lru_cache()

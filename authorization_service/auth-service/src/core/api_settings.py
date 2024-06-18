@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field('HS256', env='JWT_ALGORITHM')
     jwt_at_expire_minutes: int = Field(30, env='JWT_ACCESS_TOKEN_EXPIRE_MINUTES')
     jwt_rt_expire_minutes: int = Field(1440, env='JWT_REFRESH_TOKEN_EXPIRE_MINUTES')
-
+    # External login settings
+    yauth_secret_key: str = Field(env='YAUTH_SECRET_KEY')
+    yauth_client_id: str = Field(env='YAUTH_CLIENT_ID')
 
 settings = Settings(_env_file='../.env', _env_file_encoding='utf-8')
