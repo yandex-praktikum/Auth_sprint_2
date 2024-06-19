@@ -2,15 +2,14 @@ import logging
 from typing import Annotated, Dict
 
 from fastapi import (APIRouter, Cookie, Depends, HTTPException, Request,
-                     Response, status)
+                     Response, status, Body)
 from fastapi.encoders import jsonable_encoder
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.postgres import get_pg_session
 from src.models.db_entity import User
 from src.schema.cookie import AccessTokenCookie, RefreshTokenCookie
-from src.schema.model import AccessTokenData
+from src.schema.model import AccessTokenData, UserLoginReq
 from src.services.authentication import (AuthenticationService,
                                          get_authentication_service)
 from src.services.base import BaseService, get_base_service
@@ -100,7 +99,7 @@ async def check_refresh_token(
 async def login_user_for_access_token_cookie(
     request: Request,
     response: Response,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: Annotated[UserLoginReq, Body()],
     db: AsyncSession = Depends(get_pg_session),
     base_service: BaseService = Depends(get_base_service),
     authentication_service: AuthenticationService = Depends(get_authentication_service)
@@ -109,9 +108,9 @@ async def login_user_for_access_token_cookie(
     User login endpoint
     """
     try:
-        user = await authentication_service.authenticate_user(db, form_data.username, form_data.password)
+        user = await authentication_service.authenticate_user(db, form_data.email, form_data.password)
     except Exception as excp:
-        logging.error('Unable to get user %s. The following error occured: %s', form_data.username, excp)
+        logging.error('Unable to get user %s. The following error occured: %s', form_data.email, excp)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='internal server error')
 
     if not user:
@@ -125,7 +124,7 @@ async def login_user_for_access_token_cookie(
         user_roles = [jsonable_encoder(role) for role in user_roles_list]
 
     except Exception as excp:
-        logging.error('Unable to get roles for user %s. The following error occured: %s', form_data.username, excp)
+        logging.error('Unable to get roles for user %s. The following error occured: %s', form_data.email, excp)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='internal server error')
 
     access_token, refresh_token = await authentication_service.get_tokens(user_id=str(user.id), user_roles=user_roles)

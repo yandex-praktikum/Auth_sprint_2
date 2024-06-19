@@ -1,35 +1,15 @@
 # Текущий статус проекта
 
-## admin_panel
-
-Копия репозитория спринта 2
-
-Локальный запуск (основной сервис не в докере) выполняется так. Запустите скрипт, указанный ниже, заменив путь к бэкапу базы с `/Users/stepandilman/Labs/YP2/YP_33_Team_24_Sprint_7/admin_panel/backup.sql` на актуальный для вашего окружения. Файл с бэкапом залит в гит.
-
-```
-docker run -d \
-  --name postgres \
-  -p 5432:5432 \
-  -v /Users/stepandilman/Labs/YP2/YP_33_Team_24_Sprint_7/admin_panel/backup.sql:/docker-entrypoint-initdb.d/backup.sql \
-  -e POSTGRES_PASSWORD=123qwe \
-  -e POSTGRES_USER=app \
-  -e POSTGRES_DB=movies_database  \
-  postgres:13
+# Local development
+```bash
+cp admin_panel/.env.example admin_panel/.env
+cp authorization_service/.env.local authorization_service/.env
 ```
 
-Затем скопируйте файл `admin_panel/django_api/example/.env.example` в `admin_panel/django_api/example/.env`
-
-Далее создайте виртуальное окружение и установите все модули из requirements.txt, и из папки `admin_panel/django_api` запустите `python manage.py runserver`. В админке можно использовать логин `su` с таким же паролем.
-
-## authorization_service
-
-Копия репозитория спринта 6
-
-Локальный запуск (основной сервис не в докере) выполняется так. Файла `authorization_service/.env.local` скопируйте в `authorization_service/.env`
-
-Затем запустите `docker compose -f docker-compose.local.yml up`.
-
-Далее создайте виртуальное окружение и установите все модули из requirements.txt, и из папки `authorization_service/auth-service` апустите `main.py`.
+### Local development in containers
+```bash
+docker-compose up --build
+```
 
 # Проектная работа спринта
 

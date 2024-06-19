@@ -1,0 +1,3 @@
+include:
+  - admin_panel/docker-compose.yml
+  - authorization_service/docker-compose.yml
