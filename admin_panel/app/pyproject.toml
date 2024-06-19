@@ -1,0 +1,15 @@
+[tool.ruff]
+line-length = 120
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "S",  # flake8-bandit
+    "DJ",  # flake8-django 
+    "Q",  # flake8-quotes
+    "UP",  # pyupgrade
+]
+extend-exclude = ["migrations", "tests"]
