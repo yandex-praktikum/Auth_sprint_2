@@ -1,0 +1,109 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16.2
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./etl:/docker-entrypoint-initdb.d
+    env_file:
+      - .env
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U app -d movies_database' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  etl-movies:
+    build:
+      context: ./
+      dockerfile: ./etl/Dockerfile.movies
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  etl-persons:
+    build:
+      context: ./
+      dockerfile: ./etl/Dockerfile.persons
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  etl-genres:
+    build:
+      context: ./
+      dockerfile: ./etl/Dockerfile.genres
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  app:
+    build:
+      context: ./
+      dockerfile: ./src/Dockerfile
+    env_file:
+      - .env
+    expose:
+      - "${FASTAPI_PORT}"
+    ports:
+      - "${FASTAPI_PORT}:${FASTAPI_PORT}"
+    depends_on:
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  elasticsearch:
+    image: elasticsearch:8.12.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms4g -Xmx4g
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail http://localhost:9200 || exit 1",
+        ]
+      interval: 2s
+      timeout: 10s
+      retries: 50
+
+  redis:
+    image: redis:7.2.4-alpine
+    expose:
+      - "${REDIS_PORT}"
+
+  # nginx:
+  #   image: nginx:1.25.4
+  #   volumes:
+  #     - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./configs/site.conf:/etc/nginx/conf.d/site.conf:ro
+  #     - static-volume:/opt/app/static:ro
+  #     - media-volume:/opt/app/media:ro
+  #   depends_on:
+  #     - app
+  #   ports:
+  #     - '80:80'
+
+volumes:
+  postgres-data:
+  elasticsearch-data:
+  static-volume:
+  media-volume:
