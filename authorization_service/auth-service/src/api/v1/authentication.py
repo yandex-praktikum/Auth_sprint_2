@@ -1,5 +1,8 @@
+from urllib.parse import urljoin
 import logging
 from typing import Annotated, Dict
+import httpx
+
 
 from fastapi import (APIRouter, Cookie, Depends, HTTPException, Request,
                      Response, status, Body)
@@ -14,6 +17,7 @@ from src.services.authentication import (AuthenticationService,
                                          get_authentication_service)
 from src.services.base import BaseService, get_base_service
 from src.services.jwt_token import JWTService, get_jwt_service
+from src.core.api_settings import settings
 
 router = APIRouter()
 
@@ -144,8 +148,95 @@ async def login_user_for_access_token_cookie(
     except Exception as excp:
         logging.error('DB. Unable to save user login history: %s', excp)
 
-    return
+    response.headers["Authorization"] = f"Bearer {access_token}"
+    # callback_url = "/api/v1/draft_content"
+    # full_callback = urljoin(str(request.base_url), callback_url)
+    # return RedirectResponse(url=full_callback, status_code=302)
 
+
+@router.get('/produce_tokens', status_code=status.HTTP_200_OK)
+async def produce_tokens(
+    request: Request,
+    response: Response,
+    code: str,
+    state: str,
+    db: AsyncSession = Depends(get_pg_session),
+    authentication_service: AuthenticationService = Depends(get_authentication_service)
+):
+    external_auth_service_url = "https://oauth.yandex.ru/token"
+    data = {
+        "client_id": settings.yauth_client_id,
+        "grant_type": "authorization_code",
+        "code": code,
+        "client_secret": settings.yauth_secret_key,
+    }
+    headers = {
+        "Content-type": "application/x-www-form-urlencoded"
+    }
+
+    async with httpx.AsyncClient() as client:
+        auth_response = await client.post(external_auth_service_url, data=data, headers=headers)
+        auth_response_json = auth_response.json()
+        external_access_token = auth_response_json["access_token"]
+        external_refresh_token = auth_response_json["refresh_token"]
+    
+    external_get_user_info_service_url = "https://login.yandex.ru/info"
+    headers = {
+        "Authorization": "OAuth " + external_access_token
+    }
+
+    async with httpx.AsyncClient() as client:   
+        auth_response = await client.get(external_get_user_info_service_url, headers=headers)
+        auth_response_json = auth_response.json()
+        user_id = auth_response_json["default_email"]
+        user_roles = []
+
+    access_token, refresh_token = await authentication_service.get_tokens(user_id=str(user_id), user_roles=user_roles)
+
+    # In production, when you have https certificate, add secure=True to the methods below.
+    response.set_cookie(key=AccessTokenCookie.name, value=access_token, httponly=True)
+    response.set_cookie(key=RefreshTokenCookie.name, value=refresh_token, httponly=True)
+
+    try:
+        await authentication_service.save_login_history(
+            db,
+            user_id=str(user_id),
+            ip_address=request.client.host,
+            user_agent=request.headers.get('user-agent'),
+            location=request.headers.get('location')
+        )
+    except Exception as excp:
+        logging.error('DB. Unable to save user login history: %s', excp)
+
+    response.headers["Authorization"] = f"Bearer {access_token}"
+
+    return (user_id, user_roles)
+
+
+@router.get('/login_external', status_code=status.HTTP_200_OK)
+async def login_user_external_for_access_token_cookie(
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_pg_session)
+):
+    """
+    External user login endpoint
+    """
+
+    external_auth_service_url = "https://oauth.yandex.ru/authorize"
+    redirect_uri = urljoin(str(request.base_url), "/api/v1/produce_tokens")
+        
+    params = {
+        "response_type": "code",
+        "client_id": settings.yauth_client_id,
+        "redirect_uri": redirect_uri,
+        "scope": "login:email",
+        "state": "some_random_text"
+    }
+
+    async with httpx.AsyncClient() as client:
+        auth_response = await client.get(external_auth_service_url, params=params)
+        return (auth_response.request.method, str(auth_response.request.url))
 
 @router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
 async def logout_user(

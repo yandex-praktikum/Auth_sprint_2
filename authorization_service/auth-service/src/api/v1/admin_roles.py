@@ -1,6 +1,10 @@
+from urllib.parse import urljoin
 from typing import List, Annotated
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, status, Request
+from fastapi.responses import RedirectResponse
+
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.v1.authentication import get_superuser
@@ -13,14 +17,23 @@ from src.schema.model import (PermissionCreateReq, PermissionCreateResp,
 from src.services.admin_roles import AdminRolesService, get_admin_roles_service
 from src.services.http_bearer import get_security_jwt
 
+
 router = APIRouter()
 
-# Example from sprint 7
-@router.get('/roles')
-async def get_roles(
+
+@router.get('/draft_content')
+async def draft_content(
+    request: Request,
     user: Annotated[dict, Depends(get_security_jwt())],
 ):
     ...
+    # if user:
+    #     return {"status": "ok"}
+    # else:
+    #     #login_url = router.url_path_for('login')
+    #     login_url = "/api/v1/login"
+    #     full_url = urljoin(str(request.base_url), login_url)
+    #     return RedirectResponse(url=full_url, status_code=302)
 
 
 @router.get(
