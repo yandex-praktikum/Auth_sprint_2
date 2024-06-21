@@ -208,7 +208,9 @@ async def produce_tokens(
     except Exception as excp:
         logging.error('DB. Unable to save user login history: %s', excp)
 
-    response.headers["Authorization"] = f"Bearer {access_token}"    
+    response.headers["Authorization"] = f"Bearer {access_token}"
+
+    return (user_id, user_roles)
 
 
 @router.get('/login_external', status_code=status.HTTP_200_OK)
@@ -234,7 +236,7 @@ async def login_user_external_for_access_token_cookie(
 
     async with httpx.AsyncClient() as client:
         auth_response = await client.get(external_auth_service_url, params=params)
-
+        return (auth_response.request.method, str(auth_response.request.url))
 
 @router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
 async def logout_user(
