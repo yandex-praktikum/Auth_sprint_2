@@ -4,7 +4,7 @@ git@github.com:sdilman/YP_MPD_C32_T5_Async_API_1.git
 
 **Для проверяющего**
 
-Тесты можно запускать как в докере (docker compose -f docker-compose.allindocker.yml up) так и только развернуть приложение в докере, а запустить локально (docker compose -f docker-compose.allindocker.yml up -d; cd [путь к тестам]; pytest .)
+Тесты можно запускать как в докере (docker compose -f docker-compose.allindocker.yml up) так и только развернуть приложение в докере, а запустить локально (docker compose -f docker-compose.local.yml up -d; cd [путь к тестам]; . .venv/bin/activate; pip install -r requirements.txt; pytest .)
 
 **Важное сообщение для тимлида:** для ускорения проверки проекта укажите ссылку на приватный репозиторий с командной работой в файле readme и отправьте свежее приглашение на аккаунт [BlueDeep](https://github.com/BigDeepBlue).
 
