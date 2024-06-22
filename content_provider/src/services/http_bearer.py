@@ -1,13 +1,11 @@
 import http
 import time
 from typing import Optional
-
+from functools import lru_cache
 from jose import jwt
 from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
-from src.core.api_settings import settings
-from functools import lru_cache
+from core.config import settings
 
 
 def decode_token(token: str) -> Optional[dict]:
@@ -23,10 +21,6 @@ class JWTBearer(HTTPBearer):
         super().__init__(auto_error=auto_error)
 
     async def __call__(self, request: Request) -> dict:
-        # try:
-        #     credentials: HTTPAuthorizationCredentials = await super().__call__(request)
-        # except Exception:  # TODO find the right exception and leave only this
-        #     return None
         credentials: HTTPAuthorizationCredentials = await super().__call__(request)
         if not credentials:
             raise HTTPException(status_code=http.HTTPStatus.FORBIDDEN, detail='Invalid authorization code.')

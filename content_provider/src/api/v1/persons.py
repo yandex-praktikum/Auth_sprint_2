@@ -1,10 +1,11 @@
 from http import HTTPStatus
 from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from services.person import PersonService, get_person_service, Pagination
 from fastapi_pagination import Page, paginate
+from services.person import PersonService, get_person_service, Pagination
+from services.http_bearer import get_security_jwt
+
 
 router = APIRouter()
 
@@ -26,7 +27,8 @@ class SPersonSearch(BaseModel):
             description="Search by person")
 async def search_person(phrase: str,
                         pagination: Pagination = Depends(),
-                        person_service: PersonService = Depends(get_person_service)):
+                        person_service: PersonService = Depends(get_person_service),
+                        user: dict = Depends(get_security_jwt())):
     persons = await person_service.get_by_search(phrase, pagination.page, pagination.size)
     if not persons:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='persons not found')
@@ -48,7 +50,8 @@ class SPerson(BaseModel):
             response_model=SPerson,
             description="Give information about person by id")
 async def person_details(person_id: str,
-                         person_service: PersonService = Depends(get_person_service)):
+                         person_service: PersonService = Depends(get_person_service),
+                         user: dict = Depends(get_security_jwt())):
     person = await person_service.get_by_id(person_id)
     if not person:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='person not found')
@@ -66,7 +69,8 @@ class SFilmsWithPerson(BaseModel):
             response_model_by_alias=False,
             description="Give films where person work")
 async def films_list(person_id: str,
-                     person_service: PersonService = Depends(get_person_service)):
+                     person_service: PersonService = Depends(get_person_service),
+                     user: dict = Depends(get_security_jwt())):
     films = await person_service.films_with_person(person_id)
     if not films:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='films not found')

@@ -15,25 +15,9 @@ from src.schema.model import (PermissionCreateReq, PermissionCreateResp,
                               RoleCreateReq, RoleCreateResp, RoleInfoResp,
                               RolesListResp)
 from src.services.admin_roles import AdminRolesService, get_admin_roles_service
-from src.services.http_bearer import get_security_jwt
 
 
 router = APIRouter()
-
-
-@router.get('/draft_content')
-async def draft_content(
-    request: Request,
-    user: Annotated[dict, Depends(get_security_jwt())],
-):
-    ...
-    # if user:
-    #     return {"status": "ok"}
-    # else:
-    #     #login_url = router.url_path_for('login')
-    #     login_url = "/api/v1/login"
-    #     full_url = urljoin(str(request.base_url), login_url)
-    #     return RedirectResponse(url=full_url, status_code=302)
 
 
 @router.get(
