@@ -27,10 +27,20 @@ async def test_films_search_query_present(http_session, es_write_data, get_list_
     query = "wow"
     url = f'http://{test_settings.FASTAPI_HOST}:{test_settings.FASTAPI_PORT}' \
           f'/api/v1/films/?query={query}&page=1&size=50'
-    res, headers, status = await get_list_data_from_api(url)
-
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    res, headers, status = await get_list_data_from_api(url, headers=headers)
     assert status == HTTPStatus.OK
     assert len(res) == 1
+
+@pytest.mark.asyncio
+async def test_films_search_query_not_authorized(http_session, es_write_data, get_list_data_from_api, test_films_search_data):
+    await es_write_data(test_films_search_data, es_index)
+    query = "wow"
+    url = f'http://{test_settings.FASTAPI_HOST}:{test_settings.FASTAPI_PORT}' \
+          f'/api/v1/films/?query={query}&page=1&size=50'
+    headers = {'Authorization': f'Bearer {test_settings.BAD_TOKEN}'}
+    res, headers, status = await get_list_data_from_api(url, headers=headers)
+    assert status == HTTPStatus.FORBIDDEN
 
 @pytest.mark.asyncio
 async def test_films_search_query_missing(http_session, es_write_data, get_list_data_from_api, test_films_search_data):
@@ -38,7 +48,8 @@ async def test_films_search_query_missing(http_session, es_write_data, get_list_
     query = "great"
     url = f'http://{test_settings.FASTAPI_HOST}:{test_settings.FASTAPI_PORT}' \
           f'/api/v1/films/?query={query}&page=1&size=50'
-    res, headers, status = await get_list_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    res, headers, status = await get_list_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.NOT_FOUND
     assert res == { "detail": "films not found" }
@@ -49,7 +60,8 @@ async def test_films_search_query_sort(http_session, es_write_data, get_list_dat
     sort_term = "-imdb_rating"
     url = f'http://{test_settings.FASTAPI_HOST}:{test_settings.FASTAPI_PORT}' \
           f'/api/v1/films/?sort={sort_term}&page=1&size=50'
-    res, headers, status = await get_list_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    res, headers, status = await get_list_data_from_api(url, headers=headers)
     
     assert status == HTTPStatus.OK
     assert len(res) == len(test_films_search_data)
@@ -62,7 +74,8 @@ async def test_films_search_query_genre(http_session, es_write_data, get_list_da
     genre = "Documentary"
     url = f'http://{test_settings.FASTAPI_HOST}:{test_settings.FASTAPI_PORT}' \
           f'/api/v1/films/?genre={genre}&page=1&size=50'
-    res, headers, status = await get_list_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    res, headers, status = await get_list_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.OK
     assert len(res) == 1
@@ -73,7 +86,8 @@ async def test_films_search_id(http_session, es_write_data, get_data_from_api, t
     film_id = test_films_search_data[0]['id']
     url = f'http://{test_settings.FASTAPI_HOST}:{test_settings.FASTAPI_PORT}' \
           f'/api/v1/films/{film_id}'
-    body, headers, status = await get_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    body, headers, status = await get_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.OK
     assert body['id'] == film_id
@@ -84,7 +98,8 @@ async def test_films_search_title(http_session, es_write_data, get_list_data_fro
     phrase = 'movie'
     url = f'http://{test_settings.FASTAPI_HOST}:{test_settings.FASTAPI_PORT}' \
           f'/api/v1/films/search?phrase={phrase}&page=1&size=50'
-    res, headers, status = await get_list_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    res, headers, status = await get_list_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.OK
     assert len(res) == 2

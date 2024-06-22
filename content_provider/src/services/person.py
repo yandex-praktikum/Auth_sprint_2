@@ -10,6 +10,7 @@ from models.movies import FilmsWithPerson, Person
 from redis.asyncio import Redis
 from .helper import AsyncCache
 
+
 PERSON_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
 

@@ -28,7 +28,8 @@ async def test_get_by_id(es_write_data, get_data_from_api):
     await es_write_data([data[0]], ES_INDEX)
 
     url = base_url + f'{data[0]["id"]}'
-    body, headers, status = await get_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    body, headers, status = await get_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.OK
     assert body["uuid"] == data[0]["id"]
@@ -39,7 +40,8 @@ async def test_get_by_id_not_found(es_write_data, get_data_from_api):
     await es_write_data([data[0]], ES_INDEX)
 
     url = base_url + f'{str(uuid.uuid4())}'
-    body, headers, status = await get_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    body, headers, status = await get_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.NOT_FOUND
     assert body["detail"] == 'person not found'
@@ -52,7 +54,8 @@ async def test_get_by_id_from_cache(redis_client, es_write_data, get_data_from_a
     url = base_url + f'{data[0]["id"]}'
     await get_data_from_api(url)
     await es_delete_data(ES_INDEX)
-    body, headers, status = await get_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    body, headers, status = await get_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.OK
     assert body["uuid"] == data[0]["id"]
@@ -91,7 +94,8 @@ async def test_search(es_write_data, get_data_from_api, es_delete_data):
     await es_write_data(es_data, ES_INDEX)
 
     url = base_url + f'search?phrase={phrase}'
-    body, headers, status = await get_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    body, headers, status = await get_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.OK
     assert len(body) == 1
@@ -102,7 +106,8 @@ async def test_films_by_person(es_write_data, get_data_from_api, es_delete_data)
     await es_write_data([data[0]], ES_INDEX)
 
     url = base_url + f'{data[0]["id"]}/films'
-    body, headers, status = await get_data_from_api(url)
+    headers = {'Authorization': f'Bearer {test_settings.GOOD_TOKEN}'}
+    body, headers, status = await get_data_from_api(url, headers=headers)
 
     assert status == HTTPStatus.OK
     assert len(body["items"]) == len(data[0]['films'])

@@ -1,14 +1,28 @@
 from http import HTTPStatus
-
-from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List, Annotated
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
-
 from services.film import FilmService, get_film_service, Pagination
-
 from models.movies import Film
-from typing import List
+from services.http_bearer import get_security_jwt
+
 
 router = APIRouter()
+
+
+# @router.get('/draft_content')
+# async def draft_content(
+#     request: Request,
+#     user: dict = Depends(get_security_jwt()),
+# ):
+#     ...
+#     # if user:
+#     #     return {"status": "ok"}
+#     # else:
+#     #     #login_url = router.url_path_for('login')
+#     #     login_url = "/api/v1/login"
+#     #     full_url = urljoin(str(request.base_url), login_url)
+#     #     return RedirectResponse(url=full_url, status_code=302)
 
 
 
@@ -18,7 +32,8 @@ router = APIRouter()
         response_model=List[Film])
 async def search_film(phrase: str,
                       pagination: Pagination = Depends(),
-                      film_service: FilmService = Depends(get_film_service)
+                      film_service: FilmService = Depends(get_film_service),
+                      user: dict = Depends(get_security_jwt())
     ):
     """
     Find films by a phrase in the title:
@@ -31,11 +46,15 @@ async def search_film(phrase: str,
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='films not found')
     return films
 
+
 @router.get(
         '/{film_id}',
         summary="Find films by ID",
         response_model=Film)
-async def film_details(film_id: str, film_service: FilmService = Depends(get_film_service)) -> Film:
+async def film_details(
+    film_id: str, 
+    film_service: FilmService = Depends(get_film_service),
+    user: dict = Depends(get_security_jwt())) -> Film:
     """
     Find a film by ID
 
@@ -57,7 +76,8 @@ async def film_details(
         genre: str = Query(None),
         query: str = Query(None),
         pagination: Pagination = Depends(),
-        film_service: FilmService = Depends(get_film_service)
+        film_service: FilmService = Depends(get_film_service),
+        user: dict = Depends(get_security_jwt())
     ):
     """
     Find films by a genre, a phrase in the title, sort by any field:

@@ -61,8 +61,8 @@ def es_delete_data(es_client: AsyncElasticsearch):
 
 @pytest.fixture
 def get_data_from_api(http_session):
-    async def inner(url: str):
-        async with http_session.get(url) as response:
+    async def inner(url: str, headers: dict = None):
+        async with http_session.get(url, headers=headers) as response:
             body = await response.json()
             headers = response.headers
             status = response.status
@@ -72,8 +72,8 @@ def get_data_from_api(http_session):
 
 @pytest.fixture
 def get_list_data_from_api(http_session):
-    async def inner(url: str):
-        async with http_session.get(url) as response:
+    async def inner(url: str, headers: dict = None):
+        async with http_session.get(url, headers=headers) as response:
             body = await response.read()
             headers = response.headers
             status = response.status
