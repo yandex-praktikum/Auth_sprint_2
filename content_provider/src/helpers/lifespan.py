@@ -3,9 +3,9 @@ from fastapi import FastAPI
 import logging.config
 from contextlib import asynccontextmanager
 
-from ..core.logger import LOGGING
-from ..db import elastic, redis
-from jaeger import configure_tracer
+from src.core.logger import LOGGING
+from src.db import elastic, redis
+from src.helpers.jaeger import configure_tracer
 
 
 @asynccontextmanager
