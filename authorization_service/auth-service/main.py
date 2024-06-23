@@ -22,6 +22,7 @@ async def lifespan(app: FastAPI):
     logging.info('Config: %s', vars(settings))
     redis_db.redis = Redis(host=settings.redis_host, port=settings.redis_port)
     # Creating and filling DB
+    #await purge_database()
     await create_database()
     yield
     # On shutdown events

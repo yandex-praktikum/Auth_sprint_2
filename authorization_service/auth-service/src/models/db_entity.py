@@ -1,11 +1,13 @@
 import uuid
 from datetime import UTC, datetime
-
-from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, String,
-                        UniqueConstraint)
+from sqlalchemy import (
+    Boolean, Column, DateTime, Integer, ForeignKey, String, UniqueConstraint, Index,
+    event, extract, text, func
+)
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.schema import DDL
 from werkzeug.security import check_password_hash, generate_password_hash
-
+from sqlalchemy.orm import reconstructor
 from src.db.postgres import Base, engine
 
 
@@ -93,14 +95,37 @@ class UserRole(UUIDMixin, Base):
     __table_args__ = (UniqueConstraint('user_id', 'role_id', name='_user_role_unic'),)
 
 
-class LoginHistory(UUIDMixin, Base):
+def create_partition_login_history(target, connection, **kw) -> None:
+    """
+    Creating partition by day of week of timestamp
+    """
+    for day in range(0, 7):
+        connection.execute(
+            text(
+                f"""
+                CREATE TABLE IF NOT EXISTS "login_history_{day}" 
+                PARTITION OF login_history_parent 
+                FOR VALUES IN ({day})"""
+            )
+        )
+
+
+class LoginHistory(Base):
     """
     Class to represent DB 'login_history' table data model
     """
-    __tablename__ = 'login_history'
-
+    __tablename__ = 'login_history_parent'
+    __table_args__ = (
+        UniqueConstraint('id', 'weekday'),
+        {
+            'postgresql_partition_by': 'LIST (weekday)',
+            'listeners': [('after_create', create_partition_login_history)],
+        }
+    )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     timestamp = Column(DateTime)
+    weekday = Column(Integer, primary_key=True, default=lambda: datetime.utcnow().weekday())
     ip_address = Column(String(15))
     location = Column(String(255))
     user_agent = Column(String(255))

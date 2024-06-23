@@ -17,6 +17,7 @@ from src.schema.model import (AccessTokenData, ResetCredentialsResp,
 from src.services.base import BaseService, get_base_service
 from src.services.pagination import Pagination, SortEnum, pagination_params
 
+
 router = APIRouter()
 
 
