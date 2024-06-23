@@ -1,24 +1,16 @@
-import logging.config
-from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request, status
+from fastapi.responses import ORJSONResponse
 
-from fastapi import FastAPI
-
-from api.v1 import films, persons, genres, health
+from api import router as v1_router
 from core.config import settings
-from core.logger import LOGGING
-from db import elastic, redis
+
 from fastapi_pagination import add_pagination
+from helpers.lifespan import lifespan
 
+from opentelemetry import trace
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await elastic.es.info()
-    await redis.redis.initialize()
-    logging.config.dictConfig(LOGGING)
-    yield
-    redis.redis.close()
-    elastic.es.close()
-
+tracer = trace.get_tracer(__name__)
 
 app = FastAPI(
     title=settings.project_name,
@@ -27,8 +19,22 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
+@app.middleware("http")
+async def before_request(request: Request, call_next):
+    request_id = request.headers.get("X-Request-Id")
+    if not request_id:
+        return ORJSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "X-Request-Id is required"},
+        )
+    with tracer.start_as_current_span("movies_request") as span:
+        span.set_attribute("http.request_id", request_id)
+        response = await call_next(request)
+        return response
+
+
+FastAPIInstrumentor.instrument_app(app)
+
 add_pagination(app)
-app.include_router(films.router, prefix='/api/v1/films', tags=['films'])
-app.include_router(persons.router, prefix='/api/v1/persons', tags=['persons'])
-app.include_router(genres.router, prefix='/api/v1/genres', tags=['genres'])
-app.include_router(health.router, prefix='/api/v1/health', tags=['health'])
+app.include_router(v1_router, prefix='/api')
