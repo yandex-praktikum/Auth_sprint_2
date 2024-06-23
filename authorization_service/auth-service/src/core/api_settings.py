@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     """
     model_config = ConfigDict(extra='ignore')
     project_name: str = Field('Auth API', env='API_PROJECT_NAME')
+    service_name: str = Field('auth-service', env='API_SERVICE_NAME')
     # Redis
     redis_host: str = Field('127.0.0.1', env='REDIS_HOST')
     redis_port: int = Field(6380, env='REDIS_PORT')
@@ -35,5 +36,10 @@ class Settings(BaseSettings):
     # External login settings
     yauth_secret_key: str = Field(env='YAUTH_SECRET_KEY')
     yauth_client_id: str = Field(env='YAUTH_CLIENT_ID')
+    # Tracer
+    jaeger_enable_tracer: bool = Field(default=True, env='JAEGER_ENABLE_TRACER')
+    jaeger_host: str = Field(default='jaeger', env='JAEGER_HOST')
+    jaeger_port: int = Field(default=6831, env='JAEGER_PORT')
+
 
 settings = Settings(_env_file='../.env', _env_file_encoding='utf-8')
