@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
 
-from src.api import router as v1_router
-from src.core.config import settings
+from api import router as v1_router
+from core.config import settings
 
 from fastapi_pagination import add_pagination
-from src.helpers.lifespan import lifespan
+from helpers.lifespan import lifespan
 
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor

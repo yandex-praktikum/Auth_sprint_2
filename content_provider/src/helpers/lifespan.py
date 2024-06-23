@@ -3,14 +3,14 @@ from fastapi import FastAPI
 import logging.config
 from contextlib import asynccontextmanager
 
-from src.core.logger import LOGGING
-from src.db import elastic, redis
-from src.helpers.jaeger import configure_tracer
+from core.logger import LOGGING
+from db import elastic, redis
+from helpers.jaeger import configure_tracer
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from ..core.config import settings
+    from core.config import settings
 
     await elastic.es.info()
     await redis.redis.initialize()

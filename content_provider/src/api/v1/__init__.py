@@ -1,6 +1,6 @@
 from fastapi.routing import APIRouter
 
-from src.api.v1 import films, persons, genres, health
+from api.v1 import films, persons, genres, health
 
 
 router = APIRouter()
