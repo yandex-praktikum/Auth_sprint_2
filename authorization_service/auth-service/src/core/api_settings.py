@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     jaeger_enable_tracer: bool = Field(default=True, env='JAEGER_ENABLE_TRACER')
     jaeger_host: str = Field(default='jaeger', env='JAEGER_HOST')
     jaeger_port: int = Field(default=6831, env='JAEGER_PORT')
+    # Rate limit
+    register_rate_limit_times: int = Field(default=3, env='REGISTER_RATE_LIMIT_TIMES')
+    register_rate_limit_seconds: int = Field(default=60 * 5, env='REGISTER_RATE_LIMIT_SECONDS')
 
 
 settings = Settings(_env_file='../.env', _env_file_encoding='utf-8')
