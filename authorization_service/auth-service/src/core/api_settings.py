@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     yauth_secret_key: str = Field(env='YAUTH_SECRET_KEY')
     yauth_client_id: str = Field(env='YAUTH_CLIENT_ID')
     # Tracer
-    jaeger_enable_tracer: bool = Field(default=True, env='JAEGER_ENABLE_TRACER')
+    jaeger_enable_tracer: bool = Field(default=False, env='JAEGER_ENABLE_TRACER')
     jaeger_host: str = Field(default='jaeger', env='JAEGER_HOST')
     jaeger_port: int = Field(default=6831, env='JAEGER_PORT')
 
