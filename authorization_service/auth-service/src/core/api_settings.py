@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     model_config = ConfigDict(extra='ignore')
     project_name: str = Field('Auth API', env='API_PROJECT_NAME')
     service_name: str = Field('auth-service', env='API_SERVICE_NAME')
+    api_port: str = Field('api_port', env='API_PORT')
     # Redis
     redis_host: str = Field('127.0.0.1', env='REDIS_HOST')
     redis_port: int = Field(6380, env='REDIS_PORT')
