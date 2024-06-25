@@ -14,7 +14,7 @@ router = APIRouter()
 @router.post(
     "/register",
     response_model=UserRegisteredResp, 
-    status_code=(status.HTTP_201_CREATED, status.HTTP_429_TOO_MANY_REQUEST),
+    status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(RateLimiter(times=settings.register_rate_limit_times, seconds=settings.register_rate_limit_seconds))]
 )
 async def register_user(
