@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 import uvicorn
 from fastapi import FastAPI, Request, status
@@ -31,10 +32,9 @@ app = FastAPI(
 async def before_request(request: Request, call_next):
     request_id = request.headers.get("X-Request-Id")
     if not request_id:
-        return ORJSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"detail": "X-Request-Id is required"},
-        )
+        request_id = str(uuid.uuid4())
+        request.headers["X-Request-Id"] = request_id
+
     with tracer.start_as_current_span("auth_request") as span:
         span.set_attribute("http.request_id", request_id)
         response = await call_next(request)
