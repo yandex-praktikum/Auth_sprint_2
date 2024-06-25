@@ -1,32 +1,20 @@
 import logging
-from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.responses import ORJSONResponse
-from redis.asyncio import Redis
 
-from src.api.v1 import (admin_roles, admin_user_permissions, authentication,
-                        personal_account, registration)
+from src.api import router as v1_router
 from src.core.api_settings import settings
 from src.core.logger import setup_logging
-from src.db import redis_db
-from src.models.db_entity import create_database, purge_database
+from src.helpers.lifespan import lifespan
+
+from opentelemetry import trace
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 setup_logging()
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # On startup events
-    logging.info('Config: %s', vars(settings))
-    redis_db.redis = Redis(host=settings.redis_host, port=settings.redis_port)
-    # Creating and filling DB
-    await create_database()
-    yield
-    # On shutdown events
-    # await purge_database()
-    await redis_db.redis.close()
+tracer = trace.get_tracer(__name__)
 
 app = FastAPI(
     lifespan=lifespan,
@@ -38,12 +26,24 @@ app = FastAPI(
     version='1.0.0'
 )
 
-app.include_router(registration.router, prefix="/api/v1", tags=['Registration'])
-app.include_router(authentication.router, prefix="/api/v1", tags=['Authentication'])
-app.include_router(personal_account.router, prefix="/api/v1", tags=['Personal account'])
-app.include_router(admin_roles.router, prefix="/api/v1", tags=['Administrate roles'])
-app.include_router(admin_user_permissions.router, prefix="/api/v1", tags=['Administrate user permissions'])
 
+@app.middleware("http")
+async def before_request(request: Request, call_next):
+    request_id = request.headers.get("X-Request-Id")
+    if not request_id:
+        return ORJSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "X-Request-Id is required"},
+        )
+    with tracer.start_as_current_span("auth_request") as span:
+        span.set_attribute("http.request_id", request_id)
+        response = await call_next(request)
+        return response
+
+
+FastAPIInstrumentor.instrument_app(app)
+
+app.include_router(v1_router, prefix="/api")
 
 if __name__ == '__main__':
     uvicorn.run(
