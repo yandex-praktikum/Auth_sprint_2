@@ -12,7 +12,7 @@ This project integrates various services, including the Auth service, content de
 # Environment Setup
 cp admin_panel/.env.example admin_panel/.env && \
 cp authorization_service/.env.template authorization_service/.env && \
-cp contants_service/.env.example contacts_service/.env
+cp content_service/.env.example contacts_service/.env
 
 # Build and Run
 docker-compose up --build
