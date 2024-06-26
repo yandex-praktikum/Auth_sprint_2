@@ -18,6 +18,7 @@ setup_logging()
 tracer = trace.get_tracer(__name__)
 
 app = FastAPI(
+    root_path="/auth",
     lifespan=lifespan,
     title=settings.project_name,
     docs_url='/api/openapi',
@@ -32,8 +33,10 @@ app = FastAPI(
 async def before_request(request: Request, call_next):
     request_id = request.headers.get("X-Request-Id")
     if not request_id:
-        request_id = str(uuid.uuid4())
-        request.headers["X-Request-Id"] = request_id
+        request_id = str(uuid.uuid4()).encode('utf-8')
+        request = Request(request.scope, request.receive)
+        request.scope["headers"] = [(k, v) for k, v in request.scope["headers"] if k != b"x-request-id"]
+        request.scope["headers"].append((b"x-request-id", request_id))
 
     with tracer.start_as_current_span("auth_request") as span:
         span.set_attribute("http.request_id", request_id)

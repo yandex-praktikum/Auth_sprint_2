@@ -28,5 +28,4 @@ async def lifespan(app: FastAPI):
     await create_database()
     yield
     # On shutdown events
-    # await purge_database()
     await redis_db.redis.close()

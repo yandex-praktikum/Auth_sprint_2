@@ -1,18 +1,32 @@
-version: "3.9"
 services:
+  nginx:
+    image: nginx:1.19.2
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/configs:/etc/nginx/conf.d:ro
+      - static:/data/static:ro
+      - media:/data/media:ro
+    networks:
+      - movies-admin-app
+      - movies-cluster
+    depends_on:
+      - auth_app_backend
+      - app
+      - admin_app_backend
+    ports:
+      - "80:80"
 
   admin_app_backend:
     build:
       context: app
     volumes:
-      - ./app:/opt/app
+      - static:/opt/app/static
+      - media:/opt/app/media
     networks:
       - movies-admin-app
       - movies-cluster
     expose:
       - "8000"
-    ports:
-      - "8000:8000"
     depends_on:
       admin_app_postgres:
         condition: service_healthy
@@ -40,8 +54,12 @@ services:
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
 
+volumes:
+  static:
+  media:
+
 networks:
   movies-admin-app:
-      name: movies-admin-app
+    name: movies-admin-app
   movies-cluster:
     name: movies-cluster
